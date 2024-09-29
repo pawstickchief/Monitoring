@@ -1,0 +1,30 @@
+{"level":"info","ts":"2024-09-17T21:26:44.820+0800","caller":"logger/logconfig.go:49","msg":"/api/monitor","status":200,"method":"GET","path":"/api/monitor","query":"","ip":"127.0.0.1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36","errors":"","cost":0.0036245}
+{"level":"info","ts":"2024-09-17T21:26:45.077+0800","caller":"logger/logconfig.go:49","msg":"/favicon.ico","status":404,"method":"GET","path":"/favicon.ico","query":"","ip":"127.0.0.1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36","errors":"","cost":0}
+{"level":"info","ts":"2024-09-17T21:35:40.762+0800","caller":"awesomeProject/main.go:64","msg":"Shutdown Server ..."}
+{"level":"info","ts":"2024-09-17T21:35:40.762+0800","caller":"awesomeProject/main.go:73","msg":"Server exiting"}
+{"level":"info","ts":"2024-09-17T21:35:51.696+0800","caller":"bin/cpu.go:24","msg":"CPU 信息:"}
+{"level":"info","ts":"2024-09-17T21:35:51.704+0800","caller":"bin/cpu.go:26","msg":"CPU 信息","物理ID":"BFEBFBFF000A0671","核心数":12,"频率(MHz)":2592}
+{"level":"info","ts":"2024-09-17T21:35:51.704+0800","caller":"bin/cpu.go:33","msg":"CPU 使用率","使用率(%)":1.0416666666666665}
+{"level":"info","ts":"2024-09-17T21:35:51.704+0800","caller":"bin/disk.go:17","msg":"磁盘信息:"}
+{"level":"info","ts":"2024-09-17T21:35:51.704+0800","caller":"bin/disk.go:28","msg":"分区信息","分区":"C:","总大小(GB)":222,"已使用(GB)":118,"可用(GB)":104,"使用率(%)":53.221042133173135}
+{"level":"info","ts":"2024-09-17T21:35:51.704+0800","caller":"bin/disk.go:28","msg":"分区信息","分区":"D:","总大小(GB)":931,"已使用(GB)":686,"可用(GB)":244,"使用率(%)":73.73717303269328}
+{"level":"info","ts":"2024-09-17T21:35:51.704+0800","caller":"bin/disk.go:28","msg":"分区信息","分区":"F:","总大小(GB)":1863,"已使用(GB)":1145,"可用(GB)":717,"使用率(%)":61.49300533380334}
+{"level":"info","ts":"2024-09-17T21:35:51.704+0800","caller":"logger/logconfig.go:49","msg":"/api/monitor","status":200,"method":"GET","path":"/api/monitor","query":"","ip":"127.0.0.1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36","errors":"","cost":1.0438805}
+{"level":"info","ts":"2024-09-17T21:36:09.887+0800","caller":"awesomeProject/main.go:64","msg":"Shutdown Server ..."}
+{"level":"info","ts":"2024-09-17T21:36:09.887+0800","caller":"awesomeProject/main.go:73","msg":"Server exiting"}
+{"level":"info","ts":"2024-09-17T21:36:21.382+0800","caller":"logger/logconfig.go:49","msg":"/api/monitor","status":200,"method":"GET","path":"/api/monitor","query":"","ip":"127.0.0.1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36","errors":"","cost":0.0044774}
+{"level":"info","ts":"2024-09-17T21:41:33.978+0800","caller":"awesomeProject/main.go:65","msg":"Shutdown Server ..."}
+{"level":"info","ts":"2024-09-17T21:41:35.003+0800","caller":"bin/cpu.go:24","msg":"CPU 信息:"}
+{"level":"info","ts":"2024-09-17T21:41:35.003+0800","caller":"bin/cpu.go:26","msg":"CPU 信息","物理ID":"BFEBFBFF000A0671","核心数":12,"频率(MHz)":2592}
+{"level":"info","ts":"2024-09-17T21:41:35.003+0800","caller":"bin/cpu.go:33","msg":"CPU 使用率","使用率(%)":1.282051282051282}
+{"level":"info","ts":"2024-09-17T21:41:35.003+0800","caller":"bin/disk.go:17","msg":"磁盘信息:"}
+{"level":"info","ts":"2024-09-17T21:41:35.003+0800","caller":"bin/disk.go:28","msg":"分区信息","分区":"C:","总大小(GB)":222,"已使用(GB)":118,"可用(GB)":104,"使用率(%)":53.22052922086304}
+{"level":"info","ts":"2024-09-17T21:41:35.003+0800","caller":"bin/disk.go:28","msg":"分区信息","分区":"D:","总大小(GB)":931,"已使用(GB)":686,"可用(GB)":244,"使用率(%)":73.73717303269328}
+{"level":"info","ts":"2024-09-17T21:41:35.003+0800","caller":"bin/disk.go:28","msg":"分区信息","分区":"F:","总大小(GB)":1863,"已使用(GB)":1145,"可用(GB)":717,"使用率(%)":61.49300574332239}
+{"level":"info","ts":"2024-09-17T21:41:35.003+0800","caller":"awesomeProject/main.go:75","msg":"Server exiting"}
+{"level":"info","ts":"2024-09-17T21:41:42.197+0800","caller":"logger/logconfig.go:49","msg":"/api/monitor","status":200,"method":"GET","path":"/api/monitor","query":"","ip":"127.0.0.1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36","errors":"","cost":1.0347353}
+{"level":"info","ts":"2024-09-17T21:42:30.097+0800","caller":"awesomeProject/main.go:64","msg":"Shutdown Server ..."}
+{"level":"info","ts":"2024-09-17T21:42:30.097+0800","caller":"awesomeProject/main.go:72","msg":"Server exiting"}
+{"level":"info","ts":"2024-09-17T21:42:37.802+0800","caller":"logger/logconfig.go:49","msg":"/api/monitor","status":200,"method":"GET","path":"/api/monitor","query":"","ip":"127.0.0.1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36","errors":"","cost":1.0270812}
+{"level":"info","ts":"2024-09-17T21:44:05.517+0800","caller":"awesomeProject/main.go:64","msg":"Shutdown Server ..."}
+{"level":"info","ts":"2024-09-17T21:44:05.518+0800","caller":"awesomeProject/main.go:72","msg":"Server exiting"}
