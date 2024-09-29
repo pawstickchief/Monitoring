@@ -1,0 +1,2 @@
+{"level":"info","ts":"2024-09-29T15:42:45.942+0800","caller":"Client/main.go:64","msg":"Shutdown Server ..."}
+{"level":"info","ts":"2024-09-29T15:42:45.943+0800","caller":"Client/main.go:72","msg":"Server exiting"}

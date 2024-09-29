@@ -21,6 +21,7 @@ type AppConfig struct {
 	*FileConfig   `mapstructure:"file"`
 	*SwitchConfig `mapstructure:"switch"`
 	*WXworkToke   `mapstructure:"WXWork"`
+	*EtcdConfig   `mapstructure:"etcd"`
 }
 type FileConfig struct {
 	Filemaxsize int64  `mapstructure:"filemaxsize"`
@@ -50,6 +51,18 @@ type MySQLConfig struct {
 }
 type WXworkToke struct {
 	ApiToken string `mapstructure:"apitoken"`
+}
+type EtcdConfig struct {
+	Endpoints   []string `mapstructure:"endpoints"`
+	DialTimeout int      `mapstructure:"dial_timeout"`
+	// 如果需要用户名和密码
+	EtcdName string `mapstructure:"etcdname"`
+	Password string `mapstructure:"password"`
+	// 新增 TLS 相关配置
+	CaCert     string `mapstructure:"ca_cert"`
+	CertFile   string `mapstructure:"cert_file"`
+	KeyFile    string `mapstructure:"key_file"`
+	ServerName string `mapstructure:"server_name"`
 }
 
 func Init(configfile string) (err error) {

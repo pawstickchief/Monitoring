@@ -3,6 +3,7 @@ package router
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"go-web-app/controller"
@@ -10,8 +11,16 @@ import (
 	"go-web-app/logger"
 	"go-web-app/middlewares"
 	"go-web-app/models"
+	"go-web-app/models/clientsoket"
 	"net/http"
 )
+
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true // 允许任何请求跨域
+	},
+}
+var clients = make(map[*websocket.Conn]*clientsoket.Client)
 
 func Setup(mode, ClientUrl string, size int64, savedir string) *gin.Engine {
 	if mode == "release" {
@@ -28,6 +37,7 @@ func Setup(mode, ClientUrl string, size int64, savedir string) *gin.Engine {
 	r.StaticFile("/swagger.json", "./docs/swagger.json")
 
 	url := ginSwagger.URL("/swagger.json")
+	r.GET("/wsclient", WebsocketHandler)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
 	r.POST("/selectswitchchangvlan", controller.SelectSwitchChangeVlan)
 	r.POST("/selectneighbors", controller.SelectNeighbors)

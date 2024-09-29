@@ -1,121 +1,98 @@
 package route
 
 import (
-	"awesomeProject/bin"
-	"context"
-	"github.com/gin-gonic/gin"
+	"awesomeProject/setting"
+	"crypto/tls"
+	"fmt"
 	"github.com/gorilla/websocket"
-	"go.uber.org/zap"
 	"log"
-	"net/http"
 	"strconv"
-	"strings"
-	"sync"
 )
 
-// 初始化 WebSocket 升级器
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		// 允许所有请求，生产环境中应根据需要进行限制
-		return true
-	},
+// 客户端 WebSocket 结构
+
+type WebSocketClient struct {
+	Conn          *websocket.Conn
+	Authorization string
 }
 
-// WebSocket 处理器
-func WebsocketHandler(c *gin.Context) {
-	// 从 URL 查询参数中获取用户ID（或其他标识）
-	userID := c.Query("user_id")
-	if userID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID is required"})
-		return
-	}
+// 初始化 WebSocket 连接
 
-	// 升级 HTTP 连接到 WebSocket 连接
-	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+func InitWebSocket() {
+	serverAddress := setting.Conf.ServerConfig.Ip + ":" + strconv.Itoa(setting.Conf.ServerConfig.Port)
+	client, err := ConnectWebSocket(serverAddress)
 	if err != nil {
-		zap.L().Info("Failed to upgrade connection: %v", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upgrade to websocket"})
-		return
+		log.Fatalf("Failed to connect to server: %v", err)
 	}
-	defer conn.Close()
-	zap.L().Info("WebSocket connection established for user:",
-		zap.String("userID", userID),
-		zap.Error(err),
-	)
-	// 创建上下文和取消函数
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel() // 在退出时调用取消函数
+	defer client.Conn.Close()
 
-	// 用于 ping 输出的通道
-	outputChan := make(chan string)
-	// 互斥锁，确保不会并发写 WebSocket 连接
-	var writeMutex sync.Mutex
-
-	// 启动 Goroutine 逐条发送 ping 输出
-	go func() {
-		for output := range outputChan {
-			// 使用互斥锁保护 WebSocket 写操作
-			writeMutex.Lock()
-			err := conn.WriteMessage(websocket.TextMessage, []byte(output))
-			writeMutex.Unlock()
-			if err != nil {
-				log.Printf("Write error: %v", err)
-				return
-			}
-		}
-	}()
-
-	// 监听客户端发送的消息
-	for {
-		_, message, err := conn.ReadMessage()
-		if err != nil {
-			log.Printf("Read error: %v", err)
-			break
-		}
-
-		command := string(message)
-		log.Printf("Received command: %s", command)
-
-		// 如果收到取消指令，取消当前 ping 操作
-		if strings.TrimSpace(command) == "cancel" {
-			cancel()          // 触发取消信号
-			writeMutex.Lock() // 确保在取消时没有并发写操作
-			conn.WriteMessage(websocket.TextMessage, []byte("Ping operation canceled by client"))
-			writeMutex.Unlock()
-			continue
-		}
-
-		// 解析客户端发送的命令格式，如: "ping www.baidu.com 100"
-		parts := strings.Split(command, " ")
-		if len(parts) != 3 || parts[0] != "ping" {
-			writeMutex.Lock()
-			conn.WriteMessage(websocket.TextMessage, []byte("Invalid command format. Use 'ping <address> <count>'"))
-			writeMutex.Unlock()
-			continue
-		}
-
-		address := parts[1]                  // 获取目标地址
-		count, err := strconv.Atoi(parts[2]) // 获取次数并转换为整数
-		if err != nil || count <= 0 {
-			writeMutex.Lock()
-			conn.WriteMessage(websocket.TextMessage, []byte("Invalid ping count. It must be a positive integer."))
-			writeMutex.Unlock()
-			continue
-		}
-
-		// 重置上下文，用于新的 ping 操作
-		ctx, cancel = context.WithCancel(context.Background())
-
-		// 执行 ping 命令
-		go func() {
-			err := bin.PingWithCancel(ctx, address, count, outputChan) // 执行 ping，次数由客户端决定
-			if err != nil {
-				writeMutex.Lock()
-				conn.WriteMessage(websocket.TextMessage, []byte("Ping command failed: "+err.Error()))
-				writeMutex.Unlock()
-			}
-		}()
+	// 发送客户端IP地址
+	if err := client.SendIPAddress(setting.Conf.ClientIp); err != nil {
+		log.Fatalf("Failed to send IP address: %v", err)
 	}
+
+	// 接收授权码
+	if err := client.ReceiveAuthorizationCode(); err != nil {
+		log.Fatalf("Failed to receive authorization code: %v", err)
+	}
+
+	// 之后可以继续和服务端进行通信
+	if err := client.CommunicateWithServer("Some Message"); err != nil {
+		log.Fatalf("Failed to communicate with server: %v", err)
+	}
+}
+
+// 连接 WebSocket 服务端
+
+func ConnectWebSocket(serverAddr string) (*WebSocketClient, error) {
+	// 设置 WebSocket 连接的地址
+	u := fmt.Sprintf("ws://%s/wsclient", serverAddr)
+	log.Printf("Connecting to %s", u)
+
+	// 配置跳过证书验证 (对于 HTTPS)
+	dialer := websocket.Dialer{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	// 建立 WebSocket 连接
+	conn, _, err := dialer.Dial(u, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to WebSocket server: %v", err)
+	}
+
+	return &WebSocketClient{Conn: conn}, nil
+}
+
+// 发送 IP 地址给服务端
+
+func (client *WebSocketClient) SendIPAddress(ipAddress string) error {
+	err := client.Conn.WriteMessage(websocket.TextMessage, []byte(ipAddress))
+	if err != nil {
+		return fmt.Errorf("failed to send IP address: %v", err)
+	}
+	return nil
+}
+
+// 接收授权码
+
+func (client *WebSocketClient) ReceiveAuthorizationCode() error {
+	_, message, err := client.Conn.ReadMessage()
+	if err != nil {
+		return fmt.Errorf("failed to receive authorization code: %v", err)
+	}
+	client.Authorization = string(message)
+	log.Printf("Received Authorization Code: %s", client.Authorization)
+	return nil
+}
+
+// 使用授权码进行通信
+
+func (client *WebSocketClient) CommunicateWithServer(message string) error {
+	// 包含授权码的消息发送
+	authenticatedMessage := fmt.Sprintf("AuthCode:%s, Msg:%s", client.Authorization, message)
+	err := client.Conn.WriteMessage(websocket.TextMessage, []byte(authenticatedMessage))
+	if err != nil {
+		return fmt.Errorf("failed to send message with auth code: %v", err)
+	}
+	return nil
 }

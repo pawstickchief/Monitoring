@@ -21,14 +21,27 @@ mysql:
     dbname: "workspace"
     max_idle_conns: 20
     max_conns: 100
+
 file:
   filemaxsize: 2048
   savedir: "./static/upload/"
   httpurl: "http://127.0.0.1:8081"
   httpdir: "/static"
+
 switch:
   username: "gyop"
   passtoken: "E@2wYZ!Asa"
+
+etcd:
+  endpoints:
+    - "https://akile.pawstickchief.com:2379"
+  dial_timeout: 5000
+  ca_cert: "conf/ssl/etcd/fullchain.pem"
+  cert_file: "conf/ssl/etcd/cert.pem"
+  key_file: "conf/ssl/etcd/privkey.pem"
+  server_name: "akile.pawstickchief.com"
+  etcdname: "admin"
+  password: "Mark1590"
 
 WXWork:
   apitoken: "c2ae10dc-c831-4d08-a573-f1515caedc6b"

@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"go-web-app/controller"
+	"go-web-app/dao/etcd"
 	"go-web-app/dao/mysql"
 	"go-web-app/logger"
 	"go-web-app/router"
@@ -45,6 +46,11 @@ func main() {
 		}
 	}(zap.L())
 	zap.L().Debug("logger init success...")
+
+	if err := etcd.InitCrontab(settings.Conf.EtcdConfig); err != nil {
+		zap.L().Error("init Etcd failed, err:%v\n", zap.Error(err))
+		return
+	}
 
 	//3. 初始化mysql
 	if err := mysql.Init(settings.Conf.MySQLConfig); err != nil {

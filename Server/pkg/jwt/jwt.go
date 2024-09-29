@@ -39,7 +39,7 @@ func ParseToken(tokenString string) (*MyClaims, error) {
 	// 如果是自定义Claim结构体则需要使用 ParseWithClaims 方法
 	token, err := jwt.ParseWithClaims(tokenString, &MyClaims{}, func(token *jwt.Token) (i interface{}, err error) {
 		// 直接使用标准的Claim则可以直接使用Parse方法
-		//token, err := jwt.Parse(tokenString, func(token *jwt.Token) (i interface{}, err error) {
+		//clienttoken, err := jwt.Parse(tokenString, func(clienttoken *jwt.Token) (i interface{}, err error) {
 		return mySecret, nil
 	})
 	if err != nil {
@@ -49,5 +49,5 @@ func ParseToken(tokenString string) (*MyClaims, error) {
 	if claims, ok := token.Claims.(*MyClaims); ok && token.Valid { // 校验token
 		return claims, nil
 	}
-	return nil, errors.New("invalid token")
+	return nil, errors.New("invalid clienttoken")
 }

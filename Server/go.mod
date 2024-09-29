@@ -11,11 +11,13 @@ require (
 	github.com/go-playground/validator/v10 v10.13.0
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang-jwt/jwt/v5 v5.0.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/spf13/viper v1.15.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
+	github.com/swaggo/swag v1.8.12
 	github.com/ziutek/telnet v0.0.0-20180329124119-c3b780dc415b
 	go.etcd.io/etcd/client/v3 v3.5.6
 	go.uber.org/zap v1.24.0
@@ -56,7 +58,6 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
-	github.com/swaggo/swag v1.8.12 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.9 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.6 // indirect

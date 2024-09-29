@@ -10,7 +10,7 @@ func Cors(ClientUrl string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		method := c.Request.Method
 		c.Header("Access-Control-Allow-Origin", ClientUrl) //支持全域名访问，不安全，部署后需要固定限制为客户端网址
-		c.Header("Access-Control-Allow-Headers", "Content-Type,AccessToken,X-CSRF-Token, Authorization, Token,X-token")
+		c.Header("Access-Control-Allow-Headers", "Content-Type,AccessToken,X-CSRF-Token, Authorization, Token,X-clienttoken")
 		c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, PATCH, DELETE")
 		//c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type")
 		c.Header("Access-Control-Allow-Credentials", "true")

@@ -14,7 +14,6 @@ func Setup() *gin.Engine {
 	r := gin.New()
 	r.Use(logger.GinLogger(), logger.GinRecovery(true))
 	r.GET("/api/monitor", MonitorHandler)
-	r.GET("/ws", WebsocketHandler)
 	return r
 }
 func MonitorHandler(c *gin.Context) {

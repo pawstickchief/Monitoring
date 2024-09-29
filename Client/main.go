@@ -45,7 +45,7 @@ func main() {
 		Addr:    fmt.Sprintf(":%d", setting.Conf.Port),
 		Handler: r,
 	}
-
+	route.InitWebSocket()
 	go func() {
 		// 开启一个goroutine启动服务
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
