@@ -7,10 +7,12 @@ import (
 	"go-web-app/controller"
 	"go-web-app/dao/etcd"
 	"go-web-app/dao/mysql"
+	"go-web-app/dao/task"
 	"go-web-app/logger"
 	"go-web-app/router"
 	"go-web-app/settings"
 	"go-web-app/ws"
+	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.uber.org/zap"
 	"net/http"
 	"os"
@@ -44,10 +46,16 @@ func main() {
 	defer zap.L().Sync()
 
 	// 初始化 etcd 和 mysql
-	if err := initEtcd(); err != nil {
+	cli, err := initEtcd()
+	if err != nil {
 		zap.L().Error("init etcd failed", zap.Error(err))
 		return
 	}
+	// 初始化 TaskManager
+	task.NewTaskManager(cli)
+
+	// 初始化处理器
+	ws.InitHandlers()
 
 	if err := initDatabase(); err != nil {
 		zap.L().Error("init database failed", zap.Error(err))
@@ -60,9 +68,6 @@ func main() {
 		zap.L().Error("init validator failed", zap.Error(err))
 		return
 	}
-
-	// 初始化处理器
-	ws.InitHandlers()
 
 	// 注册路由
 	r := router.Setup(settings.Conf.Mode, settings.Conf.ClientUrl, settings.Conf.Filemaxsize, settings.Conf.Savedir)
@@ -119,9 +124,10 @@ func initDatabase() error {
 	return nil
 }
 
-func initEtcd() error {
-	if err := etcd.InitCrontab(settings.Conf.EtcdConfig); err != nil {
-		return fmt.Errorf("init etcd failed: %v", err)
+func initEtcd() (*clientv3.Client, error) {
+	client, err := etcd.InitCrontab(settings.Conf.EtcdConfig)
+	if err != nil {
+		return nil, fmt.Errorf("init etcd failed: %v", err)
 	}
-	return nil
+	return client, nil
 }

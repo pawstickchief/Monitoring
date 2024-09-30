@@ -6,8 +6,8 @@ import (
 	"crypto/x509"
 	"encoding/hex"
 	"fmt"
-	"go-web-app/models"
 	"go-web-app/models/clientsoket"
+	"go-web-app/models/crond"
 	"go-web-app/settings"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"io/ioutil"
@@ -19,27 +19,27 @@ var (
 	Client  *clientv3.Client
 	Kv      clientv3.KV
 	Lease   clientv3.Lease
-	GJobMgr *models.JobMgr
+	GJobMgr *crond.JobMgr
 )
 
-func InitCrontab(cfg *settings.EtcdConfig) (err error) {
+func InitCrontab(cfg *settings.EtcdConfig) (*clientv3.Client, error) {
 	// 加载 CA 证书
 	caCert, err := ioutil.ReadFile(cfg.CaCert)
 	if err != nil {
 		fmt.Println("加载 CA 证书失败：", err)
-		return
+		return nil, err
 	}
 	caCertPool := x509.NewCertPool()
 	if !caCertPool.AppendCertsFromPEM(caCert) {
 		fmt.Println("解析 CA 证书失败")
-		return
+		return nil, err
 	}
 
 	// 加载客户端证书和私钥
 	cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
 	if err != nil {
 		fmt.Println("加载客户端证书和私钥失败：", err)
-		return
+		return nil, err
 	}
 
 	// 创建 TLS 配置
@@ -61,21 +61,10 @@ func InitCrontab(cfg *settings.EtcdConfig) (err error) {
 	// 创建 etcd 客户端
 	if Client, err = clientv3.New(config); err != nil {
 		fmt.Println("连接 etcd 失败：", err)
-		return err
+		return nil, err
 	}
 
-	// 获取 KV 和 Lease 的 API 子集
-	Kv = clientv3.NewKV(Client)
-	Lease = clientv3.NewLease(Client)
-
-	// 赋值单例
-	GJobMgr = &models.JobMgr{
-		Clinet: Client,
-		Kv:     Kv,
-		Lease:  Lease,
-	}
-
-	return
+	return Client, nil
 }
 
 // 解析 etcd 中存储的 token 信息

@@ -32,6 +32,7 @@ func InitHandlers() {
 	common.RegisterHandler("request_token", &wshandler.TokenHandler{})
 	common.RegisterHandler("demo", &wshandler.DemoHandle{})
 	common.RegisterHandler("connection_status", &wshandler.ConnectionStatusHandler{})
+	common.RegisterHandler("task_request", &wshandler.DispatchTaskHandler{})
 }
 
 // WebSocketHandler 处理 WebSocket 连接

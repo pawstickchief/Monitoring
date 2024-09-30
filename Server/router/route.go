@@ -39,7 +39,7 @@ func Setup(mode, ClientUrl string, size int64, savedir string) *gin.Engine {
 
 	r.POST("/selectswitchtotal", controller.SelectSwitchTotal)
 	r.POST("/selectswitch", controller.SelectSwitchMac)
-	r.POST("/download", controller.DownloadHandler)
+	//r.POST("/download", controller.DownloadHandler)
 	r.POST("/upload", func(ctx *gin.Context) {
 		forms, err := ctx.MultipartForm()
 		if err != nil {

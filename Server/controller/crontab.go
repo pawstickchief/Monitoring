@@ -5,13 +5,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go-web-app/dao/mysql"
-	"go-web-app/models"
+	"go-web-app/models/crond"
 	"net/http"
 	"os"
 )
 
 func DownloadHandler(c *gin.Context) {
-	p := new(models.ParameCrontab)
+	p := new(crond.ParameCrontab)
 	if err := c.ShouldBindJSON(&p); err != nil {
 		//请求参数有误,直接返回响应
 
