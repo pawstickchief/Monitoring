@@ -10,6 +10,7 @@ import (
 	"go-web-app/logger"
 	"go-web-app/router"
 	"go-web-app/settings"
+	"go-web-app/ws"
 	"go.uber.org/zap"
 	"net/http"
 	"os"
@@ -25,82 +26,102 @@ import (
 // @host 192.168.8.84:8081
 // @BasePath /
 func main() {
-	var appConfigpath string
-	flag.StringVar(&appConfigpath, "c", "", "Configuration file path")
+	var appConfigPath string
+	flag.StringVar(&appConfigPath, "c", "", "Configuration file path")
 	flag.Parse()
-	//1. 加载配置文件
 
-	if err := settings.Init(appConfigpath); err != nil {
-		fmt.Printf("init settings failed, err:%v\n", err)
-		return
-	}
-	//2. 初始化日志
-	if err := logger.Init(settings.Conf.LogConfig, settings.Conf.Mode); err != nil {
-		fmt.Printf("init logger failed, err:%v\n", err)
-		return
-	}
-	defer func(l *zap.Logger) {
-		err := l.Sync()
-		if err != nil {
-			zap.L().Error("L.Sync failed...")
-		}
-	}(zap.L())
-	zap.L().Debug("logger init success...")
-
-	if err := etcd.InitCrontab(settings.Conf.EtcdConfig); err != nil {
-		zap.L().Error("init Etcd failed, err:%v\n", zap.Error(err))
+	// 初始化配置
+	if err := initConfig(appConfigPath); err != nil {
+		fmt.Println(err)
 		return
 	}
 
-	//3. 初始化mysql
-	if err := mysql.Init(settings.Conf.MySQLConfig); err != nil {
-		zap.L().Error("init mysql failed, err:%v\n", zap.Error(err))
+	// 初始化日志
+	if err := initLogger(); err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer zap.L().Sync()
+
+	// 初始化 etcd 和 mysql
+	if err := initEtcd(); err != nil {
+		zap.L().Error("init etcd failed", zap.Error(err))
+		return
+	}
+
+	if err := initDatabase(); err != nil {
+		zap.L().Error("init database failed", zap.Error(err))
 		return
 	}
 	defer mysql.Close()
 
-	//if err := snowflake.Init(settings.Conf.StartTime, settings.Conf.MachineId); err != nil {
-	//	zap.L().Error("init snowflake failed,err:%v\n", zap.Error(err))
-	//	return
-	//}
-
-	// 初始化gin框架的校验器使用的翻译器
+	// 初始化 Gin 的翻译器
 	if err := controller.InitTrans("zh"); err != nil {
-		zap.L().Error("init validator failed, err:%v\n", zap.Error(err))
+		zap.L().Error("init validator failed", zap.Error(err))
 		return
 	}
 
-	//4. 注册路由
+	// 初始化处理器
+	ws.InitHandlers()
+
+	// 注册路由
 	r := router.Setup(settings.Conf.Mode, settings.Conf.ClientUrl, settings.Conf.Filemaxsize, settings.Conf.Savedir)
-	//5. 启动服务 （优雅关机）
+
+	// 启动 HTTP 服务器
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", settings.Conf.Port),
 		Handler: r,
 	}
+	startServer(srv)
 
+	// 优雅关机处理
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	gracefulShutdown(srv, quit)
+}
+func startServer(srv *http.Server) {
 	go func() {
-		// 开启一个goroutine启动服务
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			zap.L().Fatal("listen: %s\n", zap.Error(err))
+			zap.L().Fatal("listen: %v", zap.Error(err))
 		}
 	}()
+}
 
-	// 等待中断信号来优雅地关闭服务器，为关闭服务器操作设置一个5秒的超时
-	quit := make(chan os.Signal, 1) // 创建一个接收信号的通道
-	// kill 默认会发送 syscall.SIGTERM 信号
-	// kill -2 发送 syscall.SIGINT 信号，我们常用的Ctrl+C就是触发系统SIGINT信号
-	// kill -9 发送 syscall.SIGKILL 信号，但是不能被捕获，所以不需要添加它
-	// signal.Notify把收到的 syscall.SIGINT或syscall.SIGTERM 信号转发给quit
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM) // 此处不会阻塞
-	<-quit                                               // 阻塞在此，当接收到上述两种信号时才会往下执行
+func gracefulShutdown(srv *http.Server, quit chan os.Signal) {
+	<-quit
 	zap.L().Info("Shutdown Server ...")
-	// 创建一个5秒超时的context
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	// 5秒内优雅关闭服务（将未处理完的请求处理完再关闭服务），超过5秒就超时退出
+
 	if err := srv.Shutdown(ctx); err != nil {
 		zap.L().Fatal("Server Shutdown: ", zap.Error(err))
 	}
 
 	zap.L().Info("Server exiting")
+}
+func initConfig(appConfigPath string) error {
+	if err := settings.Init(appConfigPath); err != nil {
+		return fmt.Errorf("init settings failed: %v", err)
+	}
+	return nil
+}
+func initLogger() error {
+	if err := logger.Init(settings.Conf.LogConfig, settings.Conf.Mode); err != nil {
+		return fmt.Errorf("init logger failed: %v", err)
+	}
+	return nil
+}
+func initDatabase() error {
+	if err := mysql.Init(settings.Conf.MySQLConfig); err != nil {
+		return fmt.Errorf("init mysql failed: %v", err)
+	}
+	return nil
+}
+
+func initEtcd() error {
+	if err := etcd.InitCrontab(settings.Conf.EtcdConfig); err != nil {
+		return fmt.Errorf("init etcd failed: %v", err)
+	}
+	return nil
 }

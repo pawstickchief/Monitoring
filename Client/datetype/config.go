@@ -10,7 +10,8 @@ type AppConfig struct {
 	ClientIp      string `mapstructure:"clientip"`
 	*LogConfig    `mapstructure:"log"`
 	*ServerConfig `mapstructure:"server"`
-	*EtcdConfig   `mapstructure:"etcd"`
+	*EtcdConfig   `mapstructure:"akile"`
+	*WebSocket    `mapstructure:"websocket"`
 }
 
 type ServerConfig struct {
@@ -33,4 +34,12 @@ type EtcdConfig struct {
 	DialTimeout int64    `mapstructure:"dialtiemeout"`
 	Username    string   `mapstructure:"username"`
 	Password    string   `mapstructure:"password"`
+}
+
+type WebSocket struct {
+	ReconnectAttempts         int `mapstructure:"reconnect_delay"`
+	ReconnectDelay            int `mapstructure:"reconnect_delay"`
+	RetryAfterFailure         int `mapstructure:"reconnect_delay"`
+	ReconnectInterval         int `mapstructure:"reconnect_interval"`
+	MaxTotalReconnectAttempts int `mapstructure:"max_total_reconnect_attempts"`
 }

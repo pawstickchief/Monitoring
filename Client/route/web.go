@@ -14,6 +14,7 @@ func Setup() *gin.Engine {
 	r := gin.New()
 	r.Use(logger.GinLogger(), logger.GinRecovery(true))
 	r.GET("/api/monitor", MonitorHandler)
+	r.GET("/demo", DemoSendDate)
 	return r
 }
 func MonitorHandler(c *gin.Context) {
@@ -84,4 +85,14 @@ func MonitorHandler(c *gin.Context) {
 
 	// 返回 JSON 数据
 	c.JSON(http.StatusOK, monitorData)
+}
+func DemoSendDate(c *gin.Context) {
+	// 获取内存数据
+	data, err := bin.SendData()
+	if err != nil {
+		return
+	}
+
+	// 返回 JSON 数据
+	c.JSON(http.StatusOK, data)
 }

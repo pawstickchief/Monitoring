@@ -11,6 +11,7 @@ import (
 	"go-web-app/settings"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"io/ioutil"
+	"strings"
 	"time"
 )
 
@@ -78,11 +79,31 @@ func InitCrontab(cfg *settings.EtcdConfig) (err error) {
 }
 
 // 解析 etcd 中存储的 token 信息
-func ParseTokenInfo(data string) (tokenInfo clientsoket.TokenInfo) {
+
+func ParseTokenInfo(data string) (tokenInfo clientsoket.TokenInfo, err error) {
 	// 假设 etcd 中存储的值是 "token:<token>,expires_at:<time>"
-	fmt.Sscanf(data, "token:%s,expires_at:%s", &tokenInfo.Token, &tokenInfo.ExpiresAt)
-	tokenInfo.ExpiresAtTime, _ = time.Parse(time.RFC3339, tokenInfo.ExpiresAt)
-	return tokenInfo
+	parts := strings.Split(data, ",")
+	if len(parts) != 2 {
+		return tokenInfo, fmt.Errorf("failed to parse token info: incorrect format")
+	}
+
+	// 分割 token 和 expires_at
+	tokenPart := strings.Split(parts[0], "token:")
+	expiresAtPart := strings.Split(parts[1], "expires_at:")
+	if len(tokenPart) != 2 || len(expiresAtPart) != 2 {
+		return tokenInfo, fmt.Errorf("failed to parse token info: incorrect format")
+	}
+
+	// 获取 token 和 expires_at 并解析过期时间
+	tokenInfo.Token = strings.TrimSpace(tokenPart[1])
+	tokenInfo.ExpiresAt = strings.TrimSpace(expiresAtPart[1])
+
+	tokenInfo.ExpiresAtTime, err = time.Parse(time.RFC3339, tokenInfo.ExpiresAt)
+	if err != nil {
+		return tokenInfo, fmt.Errorf("failed to parse expiration time: %v", err)
+	}
+
+	return tokenInfo, nil
 }
 func GenerateToken(clientIP string) string {
 	// 获取当前时间

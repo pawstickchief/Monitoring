@@ -18,3 +18,10 @@ server:
     port: 8081
     heartbeat: 5
     hostname: "client"
+
+websocket:
+  reconnect_attempts: 3       # 重试次数
+  reconnect_delay: 60         # 每次失败后的延迟时间（秒）
+  retry_after_failure: 3600   # 全部失败后的等待时间（秒）
+  reconnect_interval: 10 #重连间隔
+  max_total_reconnect_attempts: 10 #最大重连次数

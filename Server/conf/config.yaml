@@ -34,12 +34,12 @@ switch:
 
 etcd:
   endpoints:
-    - "https://akile.pawstickchief.com:2379"
+    - "https://etcd.pawstickchief.com:2379"
   dial_timeout: 5000
   ca_cert: "conf/ssl/etcd/fullchain.pem"
   cert_file: "conf/ssl/etcd/cert.pem"
   key_file: "conf/ssl/etcd/privkey.pem"
-  server_name: "akile.pawstickchief.com"
+  server_name: "etcd.pawstickchief.com"
   etcdname: "admin"
   password: "Mark1590"
 
