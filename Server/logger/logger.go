@@ -1,7 +1,7 @@
 package logger
 
 import (
-	"go-web-app/settings"
+	"Server/settings"
 	"net"
 	"net/http"
 	"net/http/httputil"

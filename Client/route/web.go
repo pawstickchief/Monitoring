@@ -1,10 +1,10 @@
 package route
 
 import (
-	"awesomeProject/bin"
-	"awesomeProject/datetype"
-	"awesomeProject/logger"
-	"awesomeProject/mode"
+	"Client/bin"
+	"Client/datetype"
+	"Client/logger"
+	"Client/mode"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"

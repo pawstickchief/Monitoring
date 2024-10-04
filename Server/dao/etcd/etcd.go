@@ -1,14 +1,14 @@
 package etcd
 
 import (
+	"Server/models/clientsoket"
+	"Server/models/tasktype"
+	"Server/settings"
 	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/hex"
 	"fmt"
-	"go-web-app/models/clientsoket"
-	"go-web-app/models/crond"
-	"go-web-app/settings"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"io/ioutil"
 	"strings"
@@ -19,7 +19,7 @@ var (
 	Client  *clientv3.Client
 	Kv      clientv3.KV
 	Lease   clientv3.Lease
-	GJobMgr *crond.JobMgr
+	GJobMgr *tasktype.JobMgr
 )
 
 func InitCrontab(cfg *settings.EtcdConfig) (*clientv3.Client, error) {
@@ -63,7 +63,16 @@ func InitCrontab(cfg *settings.EtcdConfig) (*clientv3.Client, error) {
 		fmt.Println("连接 etcd 失败：", err)
 		return nil, err
 	}
+	// 初始化 Kv 和 Lease
+	Kv = clientv3.NewKV(Client)
+	Lease = clientv3.NewLease(Client)
 
+	// 初始化全局 GJobMgr
+	GJobMgr = &tasktype.JobMgr{
+		Clinet: Client,
+		Kv:     Kv,
+		Lease:  Lease,
+	}
 	return Client, nil
 }
 

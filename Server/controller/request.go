@@ -10,6 +10,7 @@ var ErrorUserNotLogin = errors.New("用户未登录")
 const ContextUserIdKey = "userId"
 
 // 获取当前用户id
+
 func GetCurrentUser(c *gin.Context) (userId int64, err error) {
 
 	uid, ok := c.Get(ContextUserIdKey)

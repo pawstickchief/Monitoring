@@ -1,9 +1,9 @@
 package middlewares
 
 import (
+	"Server/controller"
+	"Server/pkg/jwt"
 	"github.com/gin-gonic/gin"
-	"go-web-app/controller"
-	"go-web-app/pkg/jwt"
 	"strings"
 )
 

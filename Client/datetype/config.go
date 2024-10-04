@@ -8,6 +8,7 @@ type AppConfig struct {
 	StartTime     string `mapstructure:"start_time"`
 	MachineId     int64  `mapstructure:"machine_id"`
 	ClientIp      string `mapstructure:"clientip"`
+	WorkDir       string `mapstructure:"workdir"`
 	*LogConfig    `mapstructure:"log"`
 	*ServerConfig `mapstructure:"server"`
 	*EtcdConfig   `mapstructure:"akile"`
@@ -15,10 +16,12 @@ type AppConfig struct {
 }
 
 type ServerConfig struct {
-	Ip        string `mapstructure:"ip"`
-	Port      int    `mapstructure:"port"`
-	Heartbeat int    `mapstructure:"heartbeat"`
-	HostName  string `mapstructure:"hostname"`
+	Ip          string `mapstructure:"ip"`
+	Port        int    `mapstructure:"port"`
+	Heartbeat   int    `mapstructure:"heartbeat"`
+	HostName    string `mapstructure:"hostname"`
+	DownloadApi string `mapstructure:"download_api"`
+	UploadApi   string `mapstructure:"upload_api"`
 }
 
 type LogConfig struct {

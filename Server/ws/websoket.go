@@ -1,11 +1,13 @@
 package ws
 
 import (
+	"Server/common"
+	"Server/dao/task"
+	"Server/wshandler"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"go-web-app/common"
-	"go-web-app/wshandler"
+	"github.com/jmoiron/sqlx"
 	"log"
 	"sync"
 	"time"
@@ -26,13 +28,13 @@ var (
 
 // 初始化处理器
 
-func InitHandlers() {
+func InitHandlers(taskManager *task.Manager, db *sqlx.DB) {
 	common.RegisterHandler("ping", &wshandler.PingHandler{})
 	common.RegisterHandler("update", &wshandler.UpdateHandler{})
 	common.RegisterHandler("request_token", &wshandler.TokenHandler{})
 	common.RegisterHandler("demo", &wshandler.DemoHandle{})
 	common.RegisterHandler("connection_status", &wshandler.ConnectionStatusHandler{})
-	common.RegisterHandler("task_request", &wshandler.DispatchTaskHandler{})
+	common.RegisterHandler("task_request", &wshandler.DispatchTaskHandler{TaskManager: taskManager, Db: db})
 }
 
 // WebSocketHandler 处理 WebSocket 连接

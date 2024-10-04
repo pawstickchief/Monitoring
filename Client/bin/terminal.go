@@ -1,7 +1,7 @@
 package bin
 
 import (
-	"awesomeProject/mode"
+	"Client/mode"
 	"bufio"
 	"context"
 	"fmt"

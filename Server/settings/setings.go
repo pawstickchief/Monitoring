@@ -9,19 +9,18 @@ import (
 var Conf = new(AppConfig)
 
 type AppConfig struct {
-	Name          string `mapstructure:"name"`
-	Mode          string `mapstructure:"mode"`
-	Version       string `mapstructure:"version"`
-	Port          int    `mapstructure:"port"`
-	StartTime     string `mapstructure:"start_time"`
-	MachineId     int64  `mapstructure:"machine_id"`
-	ClientUrl     string `mapstructure:"client_url"`
-	*LogConfig    `mapstructure:"log"`
-	*MySQLConfig  `mapstructure:"mysql"`
-	*FileConfig   `mapstructure:"file"`
-	*SwitchConfig `mapstructure:"switch"`
-	*WXworkToke   `mapstructure:"WXWork"`
-	*EtcdConfig   `mapstructure:"etcd"`
+	Name         string `mapstructure:"name"`
+	Mode         string `mapstructure:"mode"`
+	Version      string `mapstructure:"version"`
+	Port         int    `mapstructure:"port"`
+	StartTime    string `mapstructure:"start_time"`
+	MachineId    int64  `mapstructure:"machine_id"`
+	ClientUrl    string `mapstructure:"client_url"`
+	*LogConfig   `mapstructure:"log"`
+	*MySQLConfig `mapstructure:"mysql"`
+	*FileConfig  `mapstructure:"file"`
+	*WXworkToke  `mapstructure:"WXWork"`
+	*EtcdConfig  `mapstructure:"etcd"`
 }
 type FileConfig struct {
 	Filemaxsize int64  `mapstructure:"filemaxsize"`
@@ -36,10 +35,7 @@ type LogConfig struct {
 	MaxAge     int    `mapstructure:"max_age"`
 	MaxBackups int    `mapstructure:"max_backups"`
 }
-type SwitchConfig struct {
-	Username  string `mapstructure:"username"`
-	Passtoken string `mapstructure:"passtoken"`
-}
+
 type MySQLConfig struct {
 	Host         string `mapstructure:"host"`
 	Port         int    `mapstructure:"port"`

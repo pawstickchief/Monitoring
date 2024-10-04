@@ -1,11 +1,11 @@
 package mysql
 
 import (
+	"Server/models"
+	"Server/models/tasktype"
+	"Server/pkg/snowflake"
+	"Server/pkg/todaytime"
 	"fmt"
-	"go-web-app/models"
-	"go-web-app/models/crond"
-	"go-web-app/pkg/snowflake"
-	"go-web-app/pkg/todaytime"
 )
 
 var (
@@ -15,7 +15,7 @@ var (
 	optiondownload = "下载文件"
 )
 
-func FileLogAdd(file *models.Filelog) (err error) {
+func FileLogAdd(file *models.Filelog) (fileinfo int64, err error) {
 	fileid := snowflake.IdNum()
 	uploadtime := todaytime.NowTimeFull()
 	sqlStr := "insert into filelog(fileid,filename,filesize,filedir,uploadtime) values (?,?,?,?,?)"
@@ -43,12 +43,12 @@ func FileLogAdd(file *models.Filelog) (err error) {
 	}
 	_, err = FileOption(filedata)
 	if err != nil {
-		return err
+		return fileid, err
 	}
-	return
+	return fileid, err
 }
 
-func FileLogGet(host *crond.ParameCrontab) (data []*models.Filelog, err error) {
+func FileLogGet(host *tasktype.ParameCrontab) (data []*models.Filelog, err error) {
 	sqlStr := "select fileid,filename,uploadtime,filedir,filesize from filelog ORDER BY `uploadtime` DESC;"
 	if err = db.Select(&data, sqlStr); err != nil {
 		return
@@ -87,7 +87,7 @@ func FileOption(host *models.FileOption) (Reply int64, err error) {
 	}
 	return
 }
-func FileOptionLogGet(host *crond.ParameCrontab) (data []*models.FileOption, err error) {
+func FileOptionLogGet(host *tasktype.ParameCrontab) (data []*models.FileOption, err error) {
 	sqlStr := "select fileid,filename,fileoption,fileinfo,optiontime from filedata ORDER BY `optiontime` DESC;"
 	if err = db.Select(&data, sqlStr); err != nil {
 		return

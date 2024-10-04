@@ -1,18 +1,15 @@
 package ws
 
 import (
-	"awesomeProject/setting"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
-	"strconv"
+	"sync"
 	"time"
 )
 
-// WebSocket 客户端结构
-
+// WebSocketClient 结构体
 type WebSocketClient struct {
 	Conn       *websocket.Conn
 	Token      string
@@ -21,17 +18,28 @@ type WebSocketClient struct {
 	ClientIP   string
 }
 
-// 连接 WebSocket 服务端
+// WebSocketManager 结构体，管理 WebSocket 连接
+type WebSocketManager struct {
+	Client *WebSocketClient
+	Mu     sync.Mutex
+}
 
+var WSManager *WebSocketManager
+
+// GetWebSocketManager 获取 WebSocketManager 单例
+func GetWebSocketManager() *WebSocketManager {
+	if WSManager == nil {
+		WSManager = &WebSocketManager{}
+	}
+	return WSManager
+}
+
+// ConnectWebSocketAndRequestToken 连接 WebSocket 并请求 Token
 func ConnectWebSocketAndRequestToken(serverAddr, clientIP string) (*WebSocketClient, error) {
 	u := fmt.Sprintf("ws://%s/wsclient", serverAddr)
 	log.Printf("Connecting to %s", u)
 
-	dialer := websocket.Dialer{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-
-	conn, _, err := dialer.Dial(u, nil)
+	conn, _, err := websocket.DefaultDialer.Dial(u, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to WebSocket server: %v", err)
 	}
@@ -76,50 +84,8 @@ func ConnectWebSocketAndRequestToken(serverAddr, clientIP string) (*WebSocketCli
 	return client, nil
 }
 
-// 发送消息
-
-// CommunicateWithServer 方法实现
-func (client *WebSocketClient) CommunicateWithServer(requesters string, message string) (interface{}, error) {
-	authenticatedMessage := map[string]string{
-		"Token": client.Token,
-		"type":  requesters,
-		"Msg":   message,
-	}
-
-	authenticatedMessageJSON, err := json.Marshal(authenticatedMessage)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal message with token: %v", err)
-	}
-
-	err = client.Conn.WriteMessage(websocket.TextMessage, authenticatedMessageJSON)
-	if err != nil {
-		log.Println("Send message failed, attempting to reconnect...")
-		if reconnectErr := client.Reconnect(); reconnectErr != nil {
-			return nil, fmt.Errorf("failed to reconnect after message send failure: %v", reconnectErr)
-		}
-
-		// 重连成功后再尝试重新发送消息
-		err = client.Conn.WriteMessage(websocket.TextMessage, authenticatedMessageJSON)
-		if err != nil {
-			return nil, fmt.Errorf("failed to send message after reconnect: %v", err)
-		}
-	}
-
-	// 读取服务器的响应
-	_, response, err := client.Conn.ReadMessage()
-	if err != nil {
-		return nil, fmt.Errorf("failed to read server response: %v", err)
-	}
-
-	// 打印或处理服务器响应
-	log.Printf("Server response: %s", string(response))
-	data := string(response)
-	return data, nil
-}
-
-// 心跳检测
-
-func (client *WebSocketClient) Heartbeat() {
+// Heartbeat 函数，定时发送心跳包
+func Heartbeat(client *WebSocketClient) {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
@@ -127,34 +93,38 @@ func (client *WebSocketClient) Heartbeat() {
 		<-ticker.C
 		if err := client.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 			log.Println("Heartbeat failed, attempting to reconnect...")
-			if reconnectErr := client.Reconnect(); reconnectErr != nil {
+			if reconnectErr := Reconnect(client); reconnectErr != nil {
 				log.Println("Reconnection failed:", reconnectErr)
 				return
 			}
 		}
 	}
 }
+func StartWebSocketClient(serverAddr, clientIP string) (*WebSocketClient, error) {
+	client, err := ConnectWebSocketAndRequestToken(serverAddr, clientIP)
+	if err != nil {
+		return nil, err
+	}
+	go Heartbeat(client)
+	return client, nil
+}
 
-// 重连机制
-
-func (client *WebSocketClient) Reconnect() error {
-	serverAddress := setting.Conf.ServerConfig.Ip + ":" + strconv.Itoa(setting.Conf.ServerConfig.Port)
+// Reconnect 函数，尝试重新连接
+func Reconnect(client *WebSocketClient) error {
+	serverAddress := client.ServerAddr
 	var attempt int
-	maxTotalAttempts := setting.Conf.WebSocket.MaxTotalReconnectAttempts // 最大重连次数
-	reconnectInterval := time.Duration(setting.Conf.WebSocket.ReconnectInterval) * time.Second
+	maxTotalAttempts := 3 // 假设最大重连次数为 3
+	reconnectInterval := 5 * time.Second
 
 	for attempt = 0; attempt < maxTotalAttempts; attempt++ {
-		// 尝试重连
 		newClient, err := ConnectWebSocketAndRequestToken(serverAddress, client.ClientIP)
 		if err != nil {
 			log.Printf("Reconnect attempt %d/%d failed: %v", attempt+1, maxTotalAttempts, err)
-			// 指数回退机制：每次重连失败后延迟的时间成倍增加
 			time.Sleep(reconnectInterval)
 			reconnectInterval *= 2 // 每次失败后延迟时间加倍
 			continue
 		}
 
-		// 更新连接信息
 		client.Conn = newClient.Conn
 		client.Token = newClient.Token
 		client.ExpiresAt = newClient.ExpiresAt
@@ -163,8 +133,45 @@ func (client *WebSocketClient) Reconnect() error {
 		return nil // 重连成功，返回 nil
 	}
 
-	// 超过最大重连次数，返回错误信息
-	errMsg := fmt.Sprintf("Exceeded maximum reconnect attempts (%d). Stopping reconnection attempts.", maxTotalAttempts)
-	log.Println(errMsg)
-	return fmt.Errorf(errMsg) // 返回错误信息
+	return fmt.Errorf("failed to reconnect after %d attempts", maxTotalAttempts)
+}
+
+// CommunicateWithServer 与服务器通信
+func CommunicateWithServer(client *WebSocketClient, requesters string, message interface{}) (interface{}, error) {
+	messageJSON, err := json.Marshal(message)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal message: %v", err)
+	}
+
+	authenticatedMessage := map[string]string{
+		"Token": client.Token,
+		"type":  requesters,
+		"Msg":   string(messageJSON),
+	}
+
+	authenticatedMessageJSON, err := json.Marshal(authenticatedMessage)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal authenticated message: %v", err)
+	}
+
+	err = client.Conn.WriteMessage(websocket.TextMessage, authenticatedMessageJSON)
+	if err != nil {
+		log.Println("Send message failed, attempting to reconnect...")
+		if reconnectErr := Reconnect(client); reconnectErr != nil {
+			return nil, fmt.Errorf("failed to reconnect after message send failure: %v", reconnectErr)
+		}
+
+		err = client.Conn.WriteMessage(websocket.TextMessage, authenticatedMessageJSON)
+		if err != nil {
+			return nil, fmt.Errorf("failed to send message after reconnect: %v", err)
+		}
+	}
+
+	_, response, err := client.Conn.ReadMessage()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read server response: %v", err)
+	}
+
+	log.Printf("Server response: %s", string(response))
+	return string(response), nil
 }

@@ -1,7 +1,7 @@
 package setting
 
 import (
-	"awesomeProject/datetype"
+	"Client/datetype"
 	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"

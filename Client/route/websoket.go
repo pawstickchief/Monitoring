@@ -1,9 +1,8 @@
 package route
 
 import (
-	"awesomeProject/manager"
-	"awesomeProject/setting"
-	"awesomeProject/ws"
+	"Client/setting"
+	"Client/ws"
 	"log"
 	"strconv"
 	"time"
@@ -12,7 +11,7 @@ import (
 // 初始化 WebSocket 连接
 
 func InitWebSocket() {
-	wsManager := manager.GetWebSocketManager()
+	wsManager := ws.GetWebSocketManager()
 
 	wsManager.Mu.Lock()
 	defer wsManager.Mu.Unlock()

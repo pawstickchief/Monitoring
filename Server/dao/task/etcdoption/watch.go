@@ -1,4 +1,4 @@
-package task
+package etcdoption
 
 import (
 	"context"
@@ -18,7 +18,7 @@ func BatchWatchWithEvents(watcher clientv3.Watcher, keys []string, eventType mvc
 					// 只处理指定类型的事件
 					if ev.Type == eventType {
 						// 调用回调函数处理事件
-						callback(ev)
+						callback((*mvccpb.Event)(ev))
 					}
 				}
 			}

@@ -1,7 +1,7 @@
 package bin
 
 import (
-	"awesomeProject/datetype"
+	"Client/datetype"
 	"github.com/shirou/gopsutil/v3/disk"
 	"go.uber.org/zap"
 )

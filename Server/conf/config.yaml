@@ -14,11 +14,11 @@ log:
   max_backups: 7
 
 mysql:
-    host: "192.168.8.66"
+    host: "209.141.59.82"
     port: 3306
-    user: "admin"
+    user: "ser283004932404"
     password: "Mark1590"
-    dbname: "workspace"
+    dbname: "ser283004932404"
     max_idle_conns: 20
     max_conns: 100
 
@@ -34,12 +34,12 @@ switch:
 
 etcd:
   endpoints:
-    - "https://etcd.pawstickchief.com:2379"
-  dial_timeout: 5000
-  ca_cert: "conf/ssl/etcd/fullchain.pem"
-  cert_file: "conf/ssl/etcd/cert.pem"
-  key_file: "conf/ssl/etcd/privkey.pem"
-  server_name: "etcd.pawstickchief.com"
+    - "https://akile.pawstickchief.com:2379"
+  dial_timeout: 3000
+  ca_cert: "conf/ssl/akile/fullchain.pem"
+  cert_file: "conf/ssl/akile/cert.pem"
+  key_file: "conf/ssl/akile/privkey.pem"
+  server_name: "akile.pawstickchief.com"
   etcdname: "admin"
   password: "Mark1590"
 

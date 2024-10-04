@@ -1,7 +1,7 @@
 package bin
 
 import (
-	"awesomeProject/datetype" // 修改为你的项目路径
+	"Client/datetype" // 修改为你的项目路径
 	"github.com/shirou/gopsutil/v3/cpu"
 	"go.uber.org/zap"
 	"time"

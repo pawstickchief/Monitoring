@@ -1,7 +1,7 @@
 package logger
 
 import (
-	"awesomeProject/datetype"
+	"Client/datetype"
 	"net"
 	"net/http"
 	"net/http/httputil"

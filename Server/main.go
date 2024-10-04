@@ -1,17 +1,17 @@
 package main
 
 import (
+	"Server/controller"
+	"Server/dao/etcd"
+	"Server/dao/mysql"
+	"Server/dao/task"
+	"Server/logger"
+	"Server/router"
+	"Server/settings"
+	"Server/ws"
 	"context"
 	"flag"
 	"fmt"
-	"go-web-app/controller"
-	"go-web-app/dao/etcd"
-	"go-web-app/dao/mysql"
-	"go-web-app/dao/task"
-	"go-web-app/logger"
-	"go-web-app/router"
-	"go-web-app/settings"
-	"go-web-app/ws"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.uber.org/zap"
 	"net/http"
@@ -51,17 +51,17 @@ func main() {
 		zap.L().Error("init etcd failed", zap.Error(err))
 		return
 	}
-	// 初始化 TaskManager
-	task.NewTaskManager(cli)
-
-	// 初始化处理器
-	ws.InitHandlers()
-
-	if err := initDatabase(); err != nil {
+	db, err := mysql.Init(settings.Conf.MySQLConfig)
+	if err != nil {
 		zap.L().Error("init database failed", zap.Error(err))
 		return
 	}
 	defer mysql.Close()
+	// 初始化 TaskManager
+	taskManager := task.NewTaskManager(cli)
+
+	// 初始化处理器
+	ws.InitHandlers(taskManager, db)
 
 	// 初始化 Gin 的翻译器
 	if err := controller.InitTrans("zh"); err != nil {
@@ -70,7 +70,7 @@ func main() {
 	}
 
 	// 注册路由
-	r := router.Setup(settings.Conf.Mode, settings.Conf.ClientUrl, settings.Conf.Filemaxsize, settings.Conf.Savedir)
+	r := router.Setup(settings.Conf.Mode, settings.Conf.ClientUrl, settings.Conf.Filemaxsize, settings.Conf.Savedir, db, cli)
 
 	// 启动 HTTP 服务器
 	srv := &http.Server{
@@ -114,12 +114,6 @@ func initConfig(appConfigPath string) error {
 func initLogger() error {
 	if err := logger.Init(settings.Conf.LogConfig, settings.Conf.Mode); err != nil {
 		return fmt.Errorf("init logger failed: %v", err)
-	}
-	return nil
-}
-func initDatabase() error {
-	if err := mysql.Init(settings.Conf.MySQLConfig); err != nil {
-		return fmt.Errorf("init mysql failed: %v", err)
 	}
 	return nil
 }

@@ -1,11 +1,11 @@
 package mysql
 
 import (
+	"Server/models"
 	"crypto/md5"
 	"database/sql"
 	"encoding/hex"
 	"errors"
-	"go-web-app/models"
 )
 
 // 每一步数据库操作封装为单独的函数

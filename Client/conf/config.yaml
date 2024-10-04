@@ -1,10 +1,11 @@
 name: "client"
 mode: "dev"
-port: 10086
+port: 8080
 version: "v0.0.1"
 machine_id: 1
 start_time: "2000-05-09"
-clientip: "192.168.66.141"
+clientip: "127.0.0.1"
+workdir: "work"
 
 log:
   level: "info"
@@ -14,10 +15,12 @@ log:
   max_backups: 7
 
 server:
-    ip: "192.168.8.66"
+    ip: "192.168.0.138"
     port: 8081
     heartbeat: 5
     hostname: "client"
+    download_api: "/download"
+    upload_api: "/upload"
 
 websocket:
   reconnect_attempts: 3       # 重试次数

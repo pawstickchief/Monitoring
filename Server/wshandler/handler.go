@@ -1,10 +1,10 @@
 package wshandler
 
 import (
+	"Server/common"
+	"Server/controller"
 	"fmt"
 	"github.com/gorilla/websocket"
-	"go-web-app/common"
-	"go-web-app/controller"
 	"log"
 	"time"
 )
@@ -38,7 +38,7 @@ type TokenHandler struct{}
 
 func (h *TokenHandler) HandleMessage(conn *websocket.Conn, msg map[string]interface{}) error {
 	clientIP, ok := msg["client_ip"].(string)
-	if !ok {
+	if !ok || clientIP == "" {
 		return fmt.Errorf("client_ip field missing or invalid")
 	}
 

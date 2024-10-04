@@ -1,7 +1,7 @@
 package bin
 
 import (
-	"awesomeProject/datetype"
+	"Client/datetype"
 	"github.com/shirou/gopsutil/v3/net"
 )
 

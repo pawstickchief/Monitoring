@@ -1,9 +1,9 @@
 package controller
 
 import (
+	"Server/dao/etcd"
 	"context"
 	"fmt"
-	"go-web-app/dao/etcd"
 	"log"
 	"time"
 )
@@ -13,6 +13,10 @@ func GetTokenForClientFromController(clientIP string) (string, time.Time, error)
 
 	// 输出查询的 key 信息
 	log.Printf("Trying to get token for client IP: %s from etcd with key: %s", clientIP, key)
+	if etcd.GJobMgr.Kv == nil {
+		log.Printf("Error: etcd.GJobMgr.Kv is nil")
+		return "", time.Time{}, fmt.Errorf("etcd client is not initialized")
+	}
 
 	// 在 etcd 中查找是否有该客户端的记录
 	resp, err := etcd.GJobMgr.Kv.Get(context.Background(), key) // 调用 etcd 包中的 GJobMgr

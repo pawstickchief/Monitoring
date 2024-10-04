@@ -1,10 +1,10 @@
-package crond
+package tasktype
 
 import (
+	"Server/models"
 	"context"
 	"errors"
 	"github.com/gorhill/cronexpr"
-	"go-web-app/models"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"time"
 )

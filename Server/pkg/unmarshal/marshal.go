@@ -1,17 +1,17 @@
 package unmarshal
 
 import (
+	"Server/models/tasktype"
 	"encoding/json"
 	"github.com/gorhill/cronexpr"
-	"go-web-app/models/crond"
 	"strings"
 	"time"
 )
 
-func UnPackJob(value []byte) (ret *crond.Job, err error) {
+func UnPackJob(value []byte) (ret *tasktype.Job, err error) {
 
-	var job *crond.Job
-	job = &crond.Job{}
+	var job *tasktype.Job
+	job = &tasktype.Job{}
 	if err = json.Unmarshal(value, job); err != nil {
 		return
 	}
@@ -20,25 +20,25 @@ func UnPackJob(value []byte) (ret *crond.Job, err error) {
 }
 
 func ExtractJobName(jobKey string) string {
-	return strings.TrimPrefix(jobKey, crond.JobDir)
+	return strings.TrimPrefix(jobKey, tasktype.JobDir)
 }
 func ExtractKillerName(jobKey string) string {
-	return strings.TrimPrefix(jobKey, crond.JobKill)
+	return strings.TrimPrefix(jobKey, tasktype.JobKill)
 }
 
 type JobEvent struct {
 	EventType int
-	Job       *crond.Job
+	Job       *tasktype.Job
 }
 
-func BUildJobEvent(evenType int, job *crond.Job) (jobEvent *JobEvent) {
+func BUildJobEvent(evenType int, job *tasktype.Job) (jobEvent *JobEvent) {
 	return &JobEvent{
 		EventType: evenType,
 		Job:       job,
 	}
 }
 
-func BuildJobSchedulePlan(job *crond.Job) (jobSchedulePlan *crond.JobSchedulePlan, err error) {
+func BuildJobSchedulePlan(job *tasktype.Job) (jobSchedulePlan *tasktype.JobSchedulePlan, err error) {
 	var (
 		expr *cronexpr.Expression
 	)
@@ -46,7 +46,7 @@ func BuildJobSchedulePlan(job *crond.Job) (jobSchedulePlan *crond.JobSchedulePla
 		return
 	}
 
-	jobSchedulePlan = &crond.JobSchedulePlan{
+	jobSchedulePlan = &tasktype.JobSchedulePlan{
 		Job:      job,
 		Expr:     expr,
 		NextTime: expr.Next(time.Now()),
