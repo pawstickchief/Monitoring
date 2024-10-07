@@ -1,7 +1,7 @@
 package taskmanager
 
 import (
-	"Client/bin/crond"
+	"Client/ws"
 	"log"
 )
 
@@ -12,13 +12,47 @@ type Task struct {
 }
 
 type TaskManager struct {
-	TaskList map[string]Task // 使用 map 存储任务ID对应的任务
+	TaskList  map[string]Task // 使用 map 存储任务ID对应的任务
+	WSManager *ws.WebSocketManager
+}
+
+func (tm *TaskManager) AddTask(taskID string, crondExpression string, scriptPath string) error {
+	// 检查任务是否已经存在
+	if _, exists := tm.TaskList[taskID]; exists {
+		return nil // 任务已存在，不需要添加
+	}
+
+	// 添加新任务到 TaskList
+	tm.TaskList[taskID] = Task{
+		TaskID:  taskID,
+		Content: scriptPath,
+		Status:  "active",
+	}
+
+	log.Printf("任务 %s 已成功添加，crond 表达式: %s\n", taskID, crondExpression)
+	return nil
+}
+
+// StopTask 实现 TaskManager 接口中的 StopTask 方法
+func (tm *TaskManager) StopTask(taskID string) error {
+	// 检查任务是否存在
+	task, exists := tm.TaskList[taskID]
+	if !exists {
+		log.Printf("任务 %s 不存在", taskID)
+		return nil
+	}
+
+	// 更新任务状态为 "stopped"
+	task.Status = "stopped"
+	tm.TaskList[taskID] = task
+	log.Printf("任务 %s 已停止", taskID)
+	return nil
 }
 
 // InitTask 从服务器获取任务并初始化任务列表
 func (tm *TaskManager) InitTask() {
 	// 调用 crond 中的函数，从服务器获取任务
-	taskIDs, err := crond.Receive()
+	taskIDs, err := ws.Receive(tm.WSManager)
 	if err != nil {
 		log.Fatalf("获取任务失败: %v", err)
 	}

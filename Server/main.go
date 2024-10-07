@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Server/common"
 	"Server/controller"
 	"Server/dao/etcd"
 	"Server/dao/mysql"
@@ -61,8 +62,8 @@ func main() {
 	taskManager := task.NewTaskManager(cli)
 
 	// 初始化处理器
-	ws.InitHandlers(taskManager, db)
-
+	ws.InitHandlers(taskManager, db, cli)
+	wsManager := common.NewWebSocketManager()
 	// 初始化 Gin 的翻译器
 	if err := controller.InitTrans("zh"); err != nil {
 		zap.L().Error("init validator failed", zap.Error(err))
@@ -70,7 +71,7 @@ func main() {
 	}
 
 	// 注册路由
-	r := router.Setup(settings.Conf.Mode, settings.Conf.ClientUrl, settings.Conf.Filemaxsize, settings.Conf.Savedir, db, cli)
+	r := router.Setup(settings.Conf.Mode, settings.Conf.ClientUrl, settings.Conf.Filemaxsize, settings.Conf.Savedir, db, cli, wsManager)
 
 	// 启动 HTTP 服务器
 	srv := &http.Server{

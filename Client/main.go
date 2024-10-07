@@ -6,6 +6,7 @@ import (
 	"Client/setting"
 	"Client/taskexce"
 	"Client/taskmanager"
+	"Client/ws"
 	"context"
 	"flag"
 	"fmt"
@@ -50,8 +51,6 @@ func main() {
 		Addr:    fmt.Sprintf(":%d", setting.Conf.Port),
 		Handler: r,
 	}
-	route.InitWebSocket()
-
 	// 启动 HTTP 服务
 	go startServer(srv)
 
@@ -87,17 +86,33 @@ func gracefulShutdown(srv *http.Server) {
 	zap.L().Info("Server exiting")
 }
 
-// 初始化任务管理器和任务执行器
 func initTaskManagerAndExecutor() {
 	// 创建任务管理器实例
 	tm := &taskmanager.TaskManager{
 		TaskList: make(map[string]taskmanager.Task), // 初始化任务列表的 map
 	}
 
-	// 初始化任务列表：从服务器获取任务并添加到 TaskManager
-	tm.InitTask()
+	// 连接 WebSocket 并请求 Token
+	client, err := ws.ConnectWebSocketAndRequestToken(setting.Conf.ServerConfig.Ip, setting.Conf.ClientIp, setting.Conf.ServerConfig.Port)
+	if err != nil {
+		log.Fatalf("Failed to connect WebSocket: %v", err)
+	}
 
-	// 初始化任务执行器
-	executor := taskexce.InitExecutor(tm)
+	// 初始化 WebSocketManager
+	wsManager := ws.GetWebSocketManager(tm)
+	wsManager.Client = client // 确保 WebSocketClient 被正确赋值
+
+	// 启动心跳检测协程
+	go ws.Heartbeat(client)
+
+	// 调用 InitTask 初始化任务列表
+	tm.WSManager = wsManager // 确保 WSManager 已赋值
+	tm.InitTask()            // 从服务器获取任务并初始化任务列表
+	// 初始化任务执行器，并将 WebSocketManager 和 TaskManager 分开传递
+	executor := taskexce.InitExecutor(tm, wsManager)
 	executor.Start()
+
+	go func() {
+		ws.ListenToServerAndManageTasks(client)
+	}()
 }

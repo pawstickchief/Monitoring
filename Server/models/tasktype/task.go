@@ -5,9 +5,11 @@ import (
 )
 
 type TaskRequest struct {
-	TaskID   string `json:"task_id"`
-	TaskName string `json:"task_name"`
-	Payload  string `json:"payload"`
+	TaskID     string `json:"task_id"`
+	TaskName   string `json:"task_name"`
+	ClientIP   string `json:"client_ip"`
+	ScriptPath string `json:"script_path"`
+	Action     string `json:"action"`
 }
 
 type TaskRecord struct {
@@ -17,6 +19,7 @@ type TaskRecord struct {
 	Remarks         string `json:"remarks" db:"remarks"`
 	CrondExpression string `json:"crond_expression" db:"crond_expression"`
 	Status          string `json:"status" db:"status"` // 任务状态
+	FileId          int64  `json:"file_id" db:"file_id"`
 }
 
 type ClientTaskLog struct {
@@ -35,8 +38,9 @@ type TaskReceive struct {
 	TaskWorkDir string `json:"task_work_dir"`
 }
 type TaskRequestOption struct {
-	Option string      `json:"option" binding:"required"`
-	Info   TaskReceive `json:"task_info"`
-	FileId int64       `json:"file_id"`
-	Record TaskRecord  `json:"task_record"`
+	Option      string      `json:"option" binding:"required"`
+	Info        TaskReceive `json:"task_info"`
+	FileId      int64       `json:"file_id"`
+	Record      TaskRecord  `json:"task_record"`
+	TaskControl TaskRequest `json:"task_control"`
 }

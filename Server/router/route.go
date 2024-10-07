@@ -1,6 +1,7 @@
 package router
 
 import (
+	"Server/common"
 	"Server/controller"
 	"Server/controller/taskwithgui"
 	"Server/dao/mysql"
@@ -17,11 +18,12 @@ import (
 	"net/http"
 )
 
-func Setup(mode, ClientUrl string, size int64, savedir string, db *sqlx.DB, cli *clientv3.Client) *gin.Engine {
+func Setup(mode, ClientUrl string, size int64, savedir string, db *sqlx.DB, cli *clientv3.Client, wsManager *common.WebSocketManager) *gin.Engine {
 	if mode == "release" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.New()
+	r.Use(WebSocketManagerMiddleware(wsManager))
 	r.Use(DBMiddleware(db))
 	r.Use(ETCDMiddleware(cli))
 	r.Use(middlewares.Cors(ClientUrl))
@@ -39,6 +41,7 @@ func Setup(mode, ClientUrl string, size int64, savedir string, db *sqlx.DB, cli 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
 	r.POST("/login", controller.LoginUserVerif)
 	r.POST("/download", controller.DownloadHandler)
+	r.POST("/control", ws.ControlClientTask)
 	r.POST("/upload", func(ctx *gin.Context) {
 		forms, err := ctx.MultipartForm()
 		if err != nil {

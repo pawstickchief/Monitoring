@@ -81,11 +81,18 @@ func (tm *Manager) UpdateTaskStatus(taskID string, newStatus string) error {
 		return fmt.Errorf("检查任务状态失败: %v", err)
 	}
 
+	// 如果任务不存在，创建一个新的任务状态键
 	if len(resp.Kvs) == 0 {
-		return fmt.Errorf("任务不存在: %s", taskID)
+		log.Printf("任务 %s 不存在，正在创建新任务状态", taskID)
+		_, err = tm.kv.Put(context.Background(), taskStatusKey, newStatus)
+		if err != nil {
+			return fmt.Errorf("新建任务状态失败: %v", err)
+		}
+		log.Printf("任务 %s 的新状态已创建为 %s", taskID, newStatus)
+		return nil
 	}
 
-	// 更新任务状态
+	// 如果任务存在，更新任务状态
 	_, err = tm.kv.Put(context.Background(), taskStatusKey, newStatus)
 	if err != nil {
 		return fmt.Errorf("更新任务状态失败: %v", err)

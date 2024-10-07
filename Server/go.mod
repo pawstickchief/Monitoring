@@ -2,7 +2,6 @@ module Server
 
 go 1.22
 
-
 require (
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/fsnotify/fsnotify v1.7.0

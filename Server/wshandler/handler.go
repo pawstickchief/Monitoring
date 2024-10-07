@@ -3,8 +3,10 @@ package wshandler
 import (
 	"Server/common"
 	"Server/controller"
+	"Server/dao/clientoption"
 	"fmt"
 	"github.com/gorilla/websocket"
+	"github.com/jmoiron/sqlx"
 	"log"
 	"time"
 )
@@ -34,7 +36,9 @@ func (h *PingHandler) HandleMessage(conn *websocket.Conn, msg map[string]interfa
 
 // Token 消息处理器
 
-type TokenHandler struct{}
+type TokenHandler struct {
+	DB *sqlx.DB
+}
 
 func (h *TokenHandler) HandleMessage(conn *websocket.Conn, msg map[string]interface{}) error {
 	clientIP, ok := msg["client_ip"].(string)
@@ -42,11 +46,20 @@ func (h *TokenHandler) HandleMessage(conn *websocket.Conn, msg map[string]interf
 		return fmt.Errorf("client_ip field missing or invalid")
 	}
 
+	// 获取 token 和 expiresAt
 	token, expiresAt, err := controller.GetTokenForClientFromController(clientIP)
 	if err != nil {
 		return fmt.Errorf("failed to get token for client: %v", err)
 	}
 
+	// 更新客户端连接信息到数据库
+	err = clientoption.InsertOrUpdateClientConnection(h.DB, clientIP, token, expiresAt)
+	if err != nil {
+		log.Printf("Failed to update client connection for client IP %s: %v", clientIP, err)
+		return err
+	}
+
+	// 返回 token 和过期时间给客户端
 	response := map[string]interface{}{
 		"Token":     token,
 		"ExpiresAt": expiresAt.Format(time.RFC3339),
@@ -59,29 +72,5 @@ type DemoHandle struct{}
 
 func (h *DemoHandle) HandleMessage(conn *websocket.Conn, msg map[string]interface{}) error {
 	response := map[string]interface{}{"response": "接收数据"}
-	return common.SendJSONResponse(conn, response)
-}
-
-type ConnectionStatusHandler struct{}
-
-func (h *ConnectionStatusHandler) HandleMessage(conn *websocket.Conn, msg map[string]interface{}) error {
-	common.ClientsMutex.Lock()
-	defer common.ClientsMutex.Unlock()
-
-	// 返回连接数和每个连接的 IP 和连接时间等信息
-	response := map[string]interface{}{
-		"connection_count": len(common.Clients),
-		"clients":          make([]map[string]interface{}, 0),
-	}
-
-	for _, client := range common.Clients {
-		clientInfo := map[string]interface{}{
-			"client_ip": client.ClientIP,
-			"expiresAt": client.ExpiresAt.Format(time.RFC3339),
-		}
-		response["clients"] = append(response["clients"].([]map[string]interface{}), clientInfo)
-	}
-
-	// 发送响应
 	return common.SendJSONResponse(conn, response)
 }

@@ -9,11 +9,11 @@ import (
 )
 
 // InsertTaskRecord 插入一条新的任务记录到 task_records 表
-func InsertTaskRecord(db *sqlx.DB, clientIP, scriptPath, remarks string, taskID string, crond string) (int64, error) {
+func InsertTaskRecord(db *sqlx.DB, clientIP, scriptPath, remarks string, taskID string, crond string, fileId int64) (int64, error) {
 	// 定义插入的 SQL 语句，使用命名参数
 	query := `
-		INSERT INTO task_records (client_ip, script_path, remarks, task_id,crond_expression)
-		VALUES (:client_ip, :script_path, :remarks, :task_id,:crond_expression)
+		INSERT INTO task_records (client_ip, script_path, remarks, task_id,crond_expression,file_id)
+		VALUES (:client_ip, :script_path, :remarks, :task_id,:crond_expression,:file_id)
 	`
 
 	// 创建一个 TaskRecord 实例，不包含 ID
@@ -23,6 +23,7 @@ func InsertTaskRecord(db *sqlx.DB, clientIP, scriptPath, remarks string, taskID 
 		Remarks:         remarks,
 		TaskID:          taskID,
 		CrondExpression: crond,
+		FileId:          fileId,
 	}
 
 	// 使用 NamedExec 进行命名参数的插入

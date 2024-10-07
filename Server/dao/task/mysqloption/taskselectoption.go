@@ -38,7 +38,7 @@ func GetTaskRecordsByTaskIDs(db *sqlx.DB, taskIDs []string) ([]tasktype.TaskReco
 	}
 
 	// 使用 IN 子句进行批量查询
-	query := fmt.Sprintf("SELECT script_path, task_id, crond_expression, remarks FROM task_records WHERE task_id IN (%s)", strings.Join(placeholders, ","))
+	query := fmt.Sprintf("SELECT script_path, task_id, crond_expression, remarks,file_id FROM task_records WHERE task_id IN (%s)", strings.Join(placeholders, ","))
 
 	// 执行查询
 	rows, err := db.Query(query, args...)
@@ -51,7 +51,7 @@ func GetTaskRecordsByTaskIDs(db *sqlx.DB, taskIDs []string) ([]tasktype.TaskReco
 	var records []tasktype.TaskRecord
 	for rows.Next() {
 		var record tasktype.TaskRecord
-		if err := rows.Scan(&record.ScriptPath, &record.TaskID, &record.CrondExpression, &record.Remarks); err != nil {
+		if err := rows.Scan(&record.ScriptPath, &record.TaskID, &record.CrondExpression, &record.Remarks, &record.FileId); err != nil {
 			return nil, err
 		}
 		records = append(records, record)

@@ -2,38 +2,23 @@ package ws
 
 import (
 	"Server/common"
+	"Server/controller"
+	"Server/dao/clientoption"
 	"Server/dao/task"
 	"Server/wshandler"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 	"github.com/jmoiron/sqlx"
+	clientv3 "go.etcd.io/etcd/client/v3"
 	"log"
-	"sync"
 	"time"
 )
 
-// 客户端 WebSocket 结构
-
-type WebSocketClient struct {
-	Conn          *websocket.Conn
-	Authorization string
-	ExpiresAt     time.Time
-}
-
-var (
-	Clients      = make(map[*websocket.Conn]*WebSocketClient) // 存储连接的客户端
-	ClientsMutex = sync.Mutex{}                               // 保护 clients 访问的互斥锁
-)
-
-// 初始化处理器
-
-func InitHandlers(taskManager *task.Manager, db *sqlx.DB) {
+func InitHandlers(taskManager *task.Manager, db *sqlx.DB, etcd *clientv3.Client) {
 	common.RegisterHandler("ping", &wshandler.PingHandler{})
 	common.RegisterHandler("update", &wshandler.UpdateHandler{})
-	common.RegisterHandler("request_token", &wshandler.TokenHandler{})
+	common.RegisterHandler("request_token", &wshandler.TokenHandler{DB: db})
 	common.RegisterHandler("demo", &wshandler.DemoHandle{})
-	common.RegisterHandler("connection_status", &wshandler.ConnectionStatusHandler{})
 	common.RegisterHandler("task_request", &wshandler.DispatchTaskHandler{TaskManager: taskManager, Db: db})
 }
 
@@ -46,22 +31,49 @@ func WebsocketHandler(c *gin.Context) {
 		return
 	}
 	defer conn.Close()
+	db, exists := c.Get("db")
+	if !exists {
+		log.Println("Database connection not found")
+		return
+	}
+	sqlDB, ok := db.(*sqlx.DB) // 进行类型断言，确保是 *sqlx.DB
+	if !ok {
+		log.Println("Invalid database connection")
+		return
+	}
 	clientIP := c.ClientIP() // 获取客户端的 IP 地址
 	client := &common.WebSocketClient{
 		Conn:      conn,
 		ClientIP:  clientIP,
 		ExpiresAt: time.Now().Add(24 * time.Hour),
 	}
+
+	// 将客户端添加到 Clients 映射
 	common.ClientsMutex.Lock()
 	common.Clients[conn] = client
 	common.ClientsMutex.Unlock()
+	token, expiresAt, _ := controller.GetTokenForClientFromController(clientIP)
+
+	// 插入连接记录到数据库
+	err = clientoption.InsertOrUpdateClientConnection(sqlDB, clientIP, token, expiresAt) // 假设 auth_code 传入
+	if err != nil {
+		log.Printf("Failed to insert client connection: %v", err)
+	}
 
 	defer func() {
+		// 删除数据库中的客户端记录
+		err = clientoption.DeleteClientConnection(sqlDB, clientIP)
+		if err != nil {
+			log.Printf("Failed to delete client connection: %v", err)
+		}
+
+		// 客户端断开时移除连接
 		common.ClientsMutex.Lock()
 		delete(common.Clients, conn)
 		common.ClientsMutex.Unlock()
 	}()
 
+	// 监听 WebSocket 消息
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {

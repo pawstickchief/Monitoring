@@ -1,12 +1,24 @@
 package ws
 
 import (
+	"Client/setting"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
 	"sync"
 	"time"
+)
+
+type TaskManager interface {
+	AddTask(taskID string, crondExpression string, scriptPath string) error
+	StopTask(taskID string) error
+}
+
+// 定义全局的通道，用于监听服务器指令和处理请求响应
+var (
+	TaskActionChannel = make(chan map[string]interface{}) // 用于处理 action 相关的消息
+	ResponseChannel   = make(chan map[string]interface{}) // 用于处理普通响应数据
 )
 
 // WebSocketClient 结构体
@@ -20,25 +32,28 @@ type WebSocketClient struct {
 
 // WebSocketManager 结构体，管理 WebSocket 连接
 type WebSocketManager struct {
-	Client *WebSocketClient
-	Mu     sync.Mutex
+	Client      *WebSocketClient
+	Mu          sync.Mutex
+	TaskManager TaskManager
 }
 
 var WSManager *WebSocketManager
 
 // GetWebSocketManager 获取 WebSocketManager 单例
-func GetWebSocketManager() *WebSocketManager {
+func GetWebSocketManager(taskManager TaskManager) *WebSocketManager {
 	if WSManager == nil {
-		WSManager = &WebSocketManager{}
+		WSManager = &WebSocketManager{TaskManager: taskManager}
 	}
 	return WSManager
 }
 
 // ConnectWebSocketAndRequestToken 连接 WebSocket 并请求 Token
-func ConnectWebSocketAndRequestToken(serverAddr, clientIP string) (*WebSocketClient, error) {
-	u := fmt.Sprintf("ws://%s/wsclient", serverAddr)
+func ConnectWebSocketAndRequestToken(serverAddr, clientIP string, port int) (*WebSocketClient, error) {
+	// 拼接服务器地址和端口
+	u := fmt.Sprintf("ws://%s:%d/wsclient", serverAddr, port)
 	log.Printf("Connecting to %s", u)
 
+	// 尝试建立 WebSocket 连接
 	conn, _, err := websocket.DefaultDialer.Dial(u, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to WebSocket server: %v", err)
@@ -46,6 +61,7 @@ func ConnectWebSocketAndRequestToken(serverAddr, clientIP string) (*WebSocketCli
 
 	client := &WebSocketClient{Conn: conn, ServerAddr: serverAddr, ClientIP: clientIP}
 
+	// 构建 token 请求
 	request := map[string]string{
 		"type":      "request_token",
 		"client_ip": clientIP,
@@ -56,22 +72,26 @@ func ConnectWebSocketAndRequestToken(serverAddr, clientIP string) (*WebSocketCli
 		return nil, fmt.Errorf("failed to marshal token request: %v", err)
 	}
 
+	// 发送 token 请求
 	err = client.Conn.WriteMessage(websocket.TextMessage, requestJSON)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send token request: %v", err)
 	}
 
+	// 读取 token 响应
 	_, response, err := client.Conn.ReadMessage()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read token response: %v", err)
 	}
 
+	// 解析 token 响应
 	var tokenResponse map[string]string
 	err = json.Unmarshal(response, &tokenResponse)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal token response: %v", err)
 	}
 
+	// 存储 token 和过期时间
 	client.Token = tokenResponse["Token"]
 	expiresAt, err := time.Parse(time.RFC3339, tokenResponse["ExpiresAt"])
 	if err != nil {
@@ -100,14 +120,6 @@ func Heartbeat(client *WebSocketClient) {
 		}
 	}
 }
-func StartWebSocketClient(serverAddr, clientIP string) (*WebSocketClient, error) {
-	client, err := ConnectWebSocketAndRequestToken(serverAddr, clientIP)
-	if err != nil {
-		return nil, err
-	}
-	go Heartbeat(client)
-	return client, nil
-}
 
 // Reconnect 函数，尝试重新连接
 func Reconnect(client *WebSocketClient) error {
@@ -117,7 +129,7 @@ func Reconnect(client *WebSocketClient) error {
 	reconnectInterval := 5 * time.Second
 
 	for attempt = 0; attempt < maxTotalAttempts; attempt++ {
-		newClient, err := ConnectWebSocketAndRequestToken(serverAddress, client.ClientIP)
+		newClient, err := ConnectWebSocketAndRequestToken(serverAddress, client.ClientIP, setting.Conf.ServerConfig.Port)
 		if err != nil {
 			log.Printf("Reconnect attempt %d/%d failed: %v", attempt+1, maxTotalAttempts, err)
 			time.Sleep(reconnectInterval)
@@ -174,4 +186,44 @@ func CommunicateWithServer(client *WebSocketClient, requesters string, message i
 
 	log.Printf("Server response: %s", string(response))
 	return string(response), nil
+}
+func ListenToServerAndManageTasks(client *WebSocketClient) {
+	go func() {
+		for {
+			_, response, err := client.Conn.ReadMessage()
+			if err != nil {
+				log.Printf("Failed to read server response: %v, attempting to reconnect...", err)
+				if reconnectErr := Reconnect(client); reconnectErr != nil {
+					log.Printf("Reconnection failed: %v", reconnectErr)
+					return
+				}
+				continue
+			}
+
+			log.Printf("Received message from server: %s", string(response))
+
+			var serverResponse map[string]interface{}
+			err = json.Unmarshal(response, &serverResponse)
+			if err != nil {
+				log.Printf("Failed to unmarshal server response: %v", err)
+				continue
+			}
+
+			// 校验消息是否包含 task_id, action, client_ip 字段
+			_, hasTaskID := serverResponse["task_id"].(string)
+			action, hasAction := serverResponse["action"].(string)
+			clientIP, hasClientIP := serverResponse["client_ip"].(string)
+
+			// 检查 client_ip 是否匹配配置文件中的 IP
+			if hasTaskID && hasAction && hasClientIP && clientIP == setting.Conf.ClientIp {
+				// 符合条件的任务相关消息
+				fmt.Println("收到广播数据")
+				handleTaskMessage(action, serverResponse) // 处理任务相关的消息
+			} else {
+				// 不符合条件的普通响应
+				fmt.Println("未收到广播数据")
+				handleGeneralResponse(serverResponse) // 处理普通响应
+			}
+		}
+	}()
 }
